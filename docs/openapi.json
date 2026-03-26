@@ -1,0 +1,245 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Ubicaciones Costa Rica",
+    "description": "REST API for Costa Rica provincia, canton, and distrito data from PostgreSQL. Protected routes require a Bearer token (`API_TOKEN`).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "tags": [
+    { "name": "Health", "description": "Service health" },
+    { "name": "Ubicaciones", "description": "Geography data (authenticated)" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Returns service status. Does not require authentication.",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  },
+                  "required": ["status"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/provincias": {
+      "get": {
+        "tags": ["Ubicaciones"],
+        "summary": "List provincias",
+        "description": "Runs: `SELECT * FROM provincia ORDER BY codigo_provincia`",
+        "operationId": "listProvincias",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "JSON array of provincia rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Provincia" }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+        }
+      }
+    },
+    "/api/provincias/{codigoProvincia}/cantones": {
+      "get": {
+        "tags": ["Ubicaciones"],
+        "summary": "List cantones by provincia",
+        "description": "Runs the canton query with `codigo_provincia` as parameter.",
+        "operationId": "listCantonesByProvincia",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "codigoProvincia",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 0 },
+            "description": "Province code (`p.codigo_provincia`)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON array of canton rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CantonListItem" }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+        }
+      }
+    },
+    "/api/provincias/{codigoProvincia}/cantones/{codigoIdCanton}/distritos": {
+      "get": {
+        "tags": ["Ubicaciones"],
+        "summary": "List distritos by provincia and codigo_id_canton",
+        "description": "Runs the distrito query with `codigo_provincia` and `codigo_id_canton`.",
+        "operationId": "listDistritos",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "codigoProvincia",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 0 },
+            "description": "Province code"
+          },
+          {
+            "name": "codigoIdCanton",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 0 },
+            "description": "Matches `distrito.codigo_id_canton`"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON array of distrito rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DistritoListItem" }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API_TOKEN",
+        "description": "Send `Authorization: Bearer <API_TOKEN>` where `API_TOKEN` matches the server environment variable."
+      }
+    },
+    "schemas": {
+      "Provincia": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "codigo_provincia": { "type": "integer" },
+          "nombre_provincia": { "type": "string" }
+        }
+      },
+      "CantonListItem": {
+        "type": "object",
+        "properties": {
+          "codigo_canton": { "type": "integer" },
+          "nombre_canton": { "type": "string" },
+          "id": { "type": "integer" }
+        }
+      },
+      "DistritoListItem": {
+        "type": "object",
+        "properties": {
+          "codigo_distrito": { "type": "integer" },
+          "nombre_distrito": { "type": "string" },
+          "id": { "type": "integer" }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "Error500": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Full error payload (including stack for SQL/driver failures)"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid path parameters",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorBody" },
+            "example": { "error": "Invalid codigoProvincia: must be a non-negative integer" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid `Authorization` header",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorBody" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Bearer token does not match `API_TOKEN`",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorBody" }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "SQL or server error",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error500" }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "`API_TOKEN` is not configured on the server",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorBody" }
+          }
+        }
+      }
+    }
+  }
+}
