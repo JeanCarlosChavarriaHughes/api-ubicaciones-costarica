@@ -31,7 +31,7 @@ Interactive **Swagger (OpenAPI)** documentation is served by the application at 
 
    - **PostgreSQL**: `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` (and `PGSSLMODE=require` if your host requires SSL)
    - **Security**: `API_TOKEN` — a long random secret; clients must present this value as the Bearer token
-   - **Server**: `PORT` (optional; default `3000`)
+   - **Server**: `PORT` (optional; default `3000`), `LISTEN_HOST` (optional; default `0.0.0.0` for all IPv4 interfaces)
    - **HTTPS** (optional): `HTTPS_KEY_PATH` and `HTTPS_CERT_PATH` — see [HTTPS / TLS](#https-and-err_ssl_protocol_error)
 
 4. Start the server:
@@ -58,7 +58,9 @@ Interactive **Swagger (OpenAPI)** documentation is served by the application at 
 
 ### Base URL
 
-By default the API listens on `http://localhost:3000`. Replace the host and port in the examples below if you use different values.
+The server binds to **`0.0.0.0`** (all IPv4 interfaces) on `PORT` by default, so it can accept traffic from your LAN or the public internet if your **firewall**, **cloud security group**, and **router/NAT** allow that port. Override with **`LISTEN_HOST`** (for example `127.0.0.1` for local-only). The URL you type in the browser is your **machine’s hostname or public IP**, not necessarily `localhost`.
+
+Replace host and port in the examples below to match how you reach the server.
 
 ### HTTPS and ERR_SSL_PROTOCOL_ERROR
 

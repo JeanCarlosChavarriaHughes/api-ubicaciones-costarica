@@ -7,6 +7,8 @@ const https = require("https");
 const { createApp } = require("./app");
 
 const port = Number.parseInt(process.env.PORT || "3000", 10);
+/** Bind address: 0.0.0.0 = all IPv4 interfaces (reachable from LAN/internet if firewall allows). Use 127.0.0.1 for local-only. */
+const listenHost = process.env.LISTEN_HOST || "0.0.0.0";
 
 const keyPath = process.env.HTTPS_KEY_PATH;
 const certPath = process.env.HTTPS_CERT_PATH;
@@ -36,8 +38,11 @@ if (keyPath && certPath) {
   if (process.env.HTTPS_KEY_PASSPHRASE) {
     options.passphrase = process.env.HTTPS_KEY_PASSPHRASE;
   }
-  https.createServer(options, app).listen(port, () => {
-    console.log(`API listening on https://localhost:${port}`);
+  https.createServer(options, app).listen(port, listenHost, () => {
+    const scheme = "https";
+    console.log(
+      `API listening on ${scheme}://${listenHost}:${port} (bind); clients use your server hostname or public IP with this port.`
+    );
   });
 } else if (keyPath || certPath) {
   console.error(
@@ -45,7 +50,10 @@ if (keyPath && certPath) {
   );
   process.exit(1);
 } else {
-  http.createServer(app).listen(port, () => {
-    console.log(`API listening on http://localhost:${port}`);
+  http.createServer(app).listen(port, listenHost, () => {
+    const scheme = "http";
+    console.log(
+      `API listening on ${scheme}://${listenHost}:${port} (bind); clients use your server hostname or public IP with this port.`
+    );
   });
 }
