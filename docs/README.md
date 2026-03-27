@@ -32,6 +32,7 @@ Interactive **Swagger (OpenAPI)** documentation is served by the application at 
    - **PostgreSQL**: `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` (and `PGSSLMODE=require` if your host requires SSL)
    - **Security**: `API_TOKEN` — a long random secret; clients must present this value as the Bearer token
    - **Server**: `PORT` (optional; default `3000`)
+   - **HTTPS** (optional): `HTTPS_KEY_PATH` and `HTTPS_CERT_PATH` — see [HTTPS / TLS](#https-and-err_ssl_protocol_error)
 
 4. Start the server:
 
@@ -58,6 +59,45 @@ Interactive **Swagger (OpenAPI)** documentation is served by the application at 
 ### Base URL
 
 By default the API listens on `http://localhost:3000`. Replace the host and port in the examples below if you use different values.
+
+### HTTPS and ERR_SSL_PROTOCOL_ERROR
+
+**What the error means:** `ERR_SSL_PROTOCOL_ERROR` almost always means the browser is using **`https://`** but nothing on that port is speaking **TLS**. This app serves **plain HTTP** unless you configure TLS (or put a reverse proxy in front).
+
+- If the server is HTTP-only, open Swagger with **`http://`** (for example `http://localhost:3000/api-docs`), not `https://`.
+- If you **must** use `https://` (production, HSTS, or a page that only loads HTTPS), you need a **certificate** and one of the setups below.
+
+#### Option 1 — TLS inside Node (this project)
+
+1. Obtain a **private key** and **certificate** in PEM format (and optional CA chain).
+2. In `.env`, set **both**:
+
+   - `HTTPS_KEY_PATH` — path to the private key (`.key` / `-key.pem`)
+   - `HTTPS_CERT_PATH` — path to the certificate (`.crt` / `.pem`, often `fullchain.pem` from Let’s Encrypt)
+
+   Paths can be relative to the project root or absolute. Optional: `HTTPS_CA_PATH`, `HTTPS_KEY_PASSPHRASE`.
+
+3. Restart with `npm start`. The log line will show `https://localhost:PORT`.
+
+**Local trusted certificates (recommended for dev):** use [mkcert](https://github.com/FiloSottile/mkcert) so the browser trusts your cert:
+
+```bash
+mkcert -install
+mkcert localhost 127.0.0.1
+# Produces something like: ./localhost+1-key.pem and ./localhost+1.pem
+```
+
+Point `HTTPS_KEY_PATH` and `HTTPS_CERT_PATH` at those files.
+
+**Production:** use certificates from your CA (e.g. Let’s Encrypt). Often you get `privkey.pem` + `fullchain.pem`; set key path and cert path accordingly (you usually do **not** need a separate `HTTPS_CA_PATH` if `fullchain.pem` already includes intermediates).
+
+#### Option 2 — TLS on a reverse proxy (common in production)
+
+Run the Node app on HTTP behind **nginx**, **Caddy**, **Traefik**, or a cloud load balancer that terminates HTTPS and forwards to `http://127.0.0.1:3000`. You do not need `HTTPS_*` in `.env` for that pattern; configure TLS only on the proxy.
+
+#### Swagger “Try it out” over HTTPS
+
+`docs/openapi.json` lists a sample server URL (often `http://localhost:3000`). If you serve the API over HTTPS, change the **`servers`** entry in that file (or your deployed copy) to your real `https://` base URL so Swagger UI calls the correct scheme and avoids mixed-content issues.
 
 ### Authentication
 

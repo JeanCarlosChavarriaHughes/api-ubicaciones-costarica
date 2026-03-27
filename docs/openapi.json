@@ -8,7 +8,11 @@
   "servers": [
     {
       "url": "http://localhost:3000",
-      "description": "Local development"
+      "description": "Local development (HTTP — default when HTTPS_KEY_PATH is unset)"
+    },
+    {
+      "url": "https://localhost:3000",
+      "description": "Local development (HTTPS — use when Node is started with HTTPS_KEY_PATH + HTTPS_CERT_PATH)"
     }
   ],
   "tags": [
